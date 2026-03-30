@@ -30,12 +30,7 @@ jobs:
         id: go
 
       - name: Get dependencies
-        run: |
-          go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
+        run: go mod download
 
       # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Set environment variables
@@ -53,16 +48,12 @@ jobs:
           echo "BUILD_DIR=${BUILD_DIR}" >> $GITHUB_ENV
 
       - name: Build
-        run: |
-          mkdir -p ${BUILD_DIR}
-          make build
+        run: make build
 
       - name: Package
         run: |
-          cd ${GITHUB_WORKSPACE}
-
-          cd ${BUILD_DIR}
-          tar czvf "${GITHUB_WORKSPACE}/${ARCHIVE}" *
+          BINARY_PATH=${GITHUB_WORKSPACE}/cmd/node/node-monitoring
+          tar czvf "${GITHUB_WORKSPACE}/${ARCHIVE}" -C ${GITHUB_WORKSPACE}/cmd/node node-monitoring
           stat ${GITHUB_WORKSPACE}/${ARCHIVE}
 
       - name: Save artifacts
@@ -94,7 +85,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          tag_name: vNext
+          tag_name: ${{ github.ref_name }}-${{ github.sha }}
           name: "Release draft from Github Actions"
           files: assets/**/*.tgz
         env:
